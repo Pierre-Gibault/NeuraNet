@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <sstream>
 
+// Initialise la fenêtre de suivi de perte et alloue le buffer des points.
 TrainingGraphWindow::TrainingGraphWindow(std::size_t totalPoints)
         : window_(
 #if defined(SFML_VERSION_MAJOR) && SFML_VERSION_MAJOR >= 3
@@ -20,10 +21,12 @@ TrainingGraphWindow::TrainingGraphWindow(std::size_t totalPoints)
     }
 }
 
+// Indique si la fenêtre est utilisable pour de nouveaux rendus.
 bool TrainingGraphWindow::isOpen() const {
     return window_.isOpen() && !closedByUser_;
 }
 
+// Vide la file d'événements SFML (notamment fermeture utilisateur).
 void TrainingGraphWindow::processEvents() {
 #if defined(SFML_VERSION_MAJOR) && SFML_VERSION_MAJOR >= 3
     while (const auto event = window_.pollEvent()) {
@@ -43,6 +46,7 @@ void TrainingGraphWindow::processEvents() {
 #endif
 }
 
+// Ajoute une valeur de perte et rafraîchit immédiatement l'affichage.
 void TrainingGraphWindow::addSample(std::size_t sampleIndex, double loss) {
     if (!isOpen() || sampleIndex >= totalPoints_) {
         return;
@@ -53,6 +57,7 @@ void TrainingGraphWindow::addSample(std::size_t sampleIndex, double loss) {
         visiblePoints_ = sampleIndex + 1;
     }
 
+    // Met à jour le titre de fenêtre avec progression et perte courante.
     std::ostringstream title;
     title << "NeuraNet - Training sample " << (sampleIndex + 1) << '/' << totalPoints_ << " | loss: " << std::fixed << std::setprecision(6) << loss;
     window_.setTitle(title.str());
@@ -61,6 +66,7 @@ void TrainingGraphWindow::addSample(std::size_t sampleIndex, double loss) {
     processEvents();
 }
 
+// Dessine un carré de légende coloré.
 void TrainingGraphWindow::drawLegend(float x, float y, const sf::Color& color) {
     sf::RectangleShape swatch({18.f, 18.f});
     swatch.setPosition({x, y});
@@ -68,6 +74,7 @@ void TrainingGraphWindow::drawLegend(float x, float y, const sf::Color& color) {
     window_.draw(swatch);
 }
 
+// Dessine un panneau de graphe (cadre, axes, courbe et points).
 void TrainingGraphWindow::renderPanel(const sf::FloatRect& panelRect,
                                       const sf::Color& lineColor,
                                       const double* values,
@@ -110,6 +117,7 @@ void TrainingGraphWindow::renderPanel(const sf::FloatRect& panelRect,
     yAxis.setFillColor(sf::Color(140, 140, 140));
     window_.draw(yAxis);
 
+    // Évite de tracer une courbe invalide sans données exploitables.
     if (visiblePoints_ < 2 || maxValue <= 0.0) {
         return;
     }
@@ -121,6 +129,7 @@ void TrainingGraphWindow::renderPanel(const sf::FloatRect& panelRect,
         sf::LineStrip,
 #endif
         visiblePoints_);
+    // Trace la ligne reliant tous les échantillons visibles.
     for (std::size_t index = 0; index < visiblePoints_; ++index) {
         float x_frac = 0.0f;
         if (totalPoints_ > 1) {
@@ -138,6 +147,7 @@ void TrainingGraphWindow::renderPanel(const sf::FloatRect& panelRect,
     }
     window_.draw(line);
 
+    // Ajoute un marqueur circulaire sur chaque point pour améliorer la lisibilité.
     for (std::size_t index = 0; index < visiblePoints_; ++index) {
         const float x = plotLeft + static_cast<float>(index) * plotWidth /
                                     static_cast<float>(std::max<std::size_t>(1, totalPoints_ - 1));
@@ -151,6 +161,7 @@ void TrainingGraphWindow::renderPanel(const sf::FloatRect& panelRect,
     }
 }
 
+// Exécute le rendu complet de la fenêtre de suivi.
 void TrainingGraphWindow::render() {
     window_.clear(sf::Color(18, 18, 22));
 
@@ -161,6 +172,7 @@ void TrainingGraphWindow::render() {
     window_.display();
 }
 
+// Calcule la perte maximale visible pour normaliser l'axe vertical.
 double TrainingGraphWindow::computeMaxLoss() const {
     double maxLoss = 0.0;
     for (std::size_t index = 0; index < visiblePoints_; ++index) {

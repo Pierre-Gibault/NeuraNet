@@ -14,6 +14,7 @@
 
 namespace {
 
+// Sigmoïde appliquée élément par élément.
 Matrix sigmoid(const Matrix& input) {
     Matrix result(input.rows(), input.cols());
     for (std::size_t i = 0; i < input.size(); ++i) {
@@ -23,6 +24,7 @@ Matrix sigmoid(const Matrix& input) {
     return result;
 }
 
+// Dérivée de la sigmoïde à partir des activations déjà calculées.
 Matrix sigmoidDerivativeFromActivation(const Matrix& activation) {
     Matrix result(activation.rows(), activation.cols());
     for (std::size_t i = 0; i < activation.size(); ++i) {
@@ -32,6 +34,7 @@ Matrix sigmoidDerivativeFromActivation(const Matrix& activation) {
     return result;
 }
 
+// Convertit un label scalaire en vecteur one-hot.
 Matrix createOneHot(std::uint8_t label, std::size_t outputSize) {
     Matrix result(outputSize, 1);
     if (label < outputSize) {
@@ -42,6 +45,7 @@ Matrix createOneHot(std::uint8_t label, std::size_t outputSize) {
 
 } // namespace
 
+// Initialise l'architecture et les paramètres du réseau.
 NeuralNetwork::NeuralNetwork(std::size_t inputSize,
                              std::size_t hiddenSize,
                              std::size_t outputSize)
@@ -53,6 +57,7 @@ NeuralNetwork::NeuralNetwork(std::size_t inputSize,
       weightsHiddenOutput_(Matrix::random(outputSize, hiddenSize, -0.1, 0.1)),
       biasOutput_(Matrix::zeros(outputSize, 1)) {}
 
+// Propagation avant : couches linéaires puis activations.
 void NeuralNetwork::forward(const Matrix& input, Matrix& hiddenActivation, Matrix& outputActivation) const {
     Matrix hiddenLinear = Matrix::add(Matrix::multiply(weightsInputHidden_, input), biasHidden_);
     hiddenActivation = sigmoid(hiddenLinear);
@@ -61,6 +66,7 @@ void NeuralNetwork::forward(const Matrix& input, Matrix& hiddenActivation, Matri
     outputActivation = Matrix::softmax(outputLinear);
 }
 
+// Renvoie les probabilités de classes pour une entrée donnée.
 Matrix NeuralNetwork::predict(const Matrix& input) const {
     Matrix hiddenActivation;
     Matrix outputActivation;
@@ -68,10 +74,12 @@ Matrix NeuralNetwork::predict(const Matrix& input) const {
     return outputActivation;
 }
 
+// Renvoie la classe la plus probable.
 std::size_t NeuralNetwork::predictClass(const Matrix& input) const {
     return predict(input).argMax();
 }
 
+// Effectue un pas d'entraînement complet (forward + backprop + update).
 double NeuralNetwork::trainSample(const Matrix& input, std::uint8_t label, double learningRate) {
     Matrix hiddenActivation;
     Matrix outputActivation;
@@ -79,12 +87,14 @@ double NeuralNetwork::trainSample(const Matrix& input, std::uint8_t label, doubl
 
     const Matrix target = oneHot(label);
 
+    // Perte cross-entropy pour un échantillon.
     double sampleLoss = 0.0;
     for (std::size_t row = 0; row < outputSize_; ++row) {
         const double predicted = std::max(1e-12, outputActivation(row, 0));
         sampleLoss -= target(row, 0) * std::log(predicted);
     }
 
+    // Gradient de la couche de sortie (softmax + CE).
     Matrix dZ2 = Matrix::subtract(outputActivation, target);
     Matrix dW2 = Matrix::multiply(dZ2, hiddenActivation.transpose());
     Matrix dB2 = dZ2;
@@ -94,6 +104,7 @@ double NeuralNetwork::trainSample(const Matrix& input, std::uint8_t label, doubl
     Matrix dW1 = Matrix::multiply(dZ1, input.transpose());
     Matrix dB1 = dZ1;
 
+    // Descente de gradient sur poids et biais.
     weightsHiddenOutput_ -= dW2 * learningRate;
     biasOutput_ -= dB2 * learningRate;
     weightsInputHidden_ -= dW1 * learningRate;
@@ -102,10 +113,12 @@ double NeuralNetwork::trainSample(const Matrix& input, std::uint8_t label, doubl
     return sampleLoss;
 }
 
+// Encodage one-hot d'un label pour la sortie du réseau.
 Matrix NeuralNetwork::oneHot(std::uint8_t label) const {
     return createOneHot(label, outputSize_);
 }
 
+// Boucle d'entraînement sur plusieurs époques.
 void NeuralNetwork::train(const MnistDataset& dataset,
                           std::size_t epochs,
                           double learningRate,
@@ -120,6 +133,7 @@ void NeuralNetwork::train(const MnistDataset& dataset,
         order[i] = i;
     }
 
+    // Générateur pseudo-aléatoire pour le mélange des échantillons.
     std::mt19937 generator;
 
     std::size_t graphStride = 100;
@@ -143,7 +157,9 @@ void NeuralNetwork::train(const MnistDataset& dataset,
     std::size_t swapIndex;
     Matrix input;
 
+    // Itère sur les époques.
     for (epoch = 0; epoch < epochs; ++epoch) {
+        // Mélange de l'ordre des échantillons pour améliorer la généralisation.
         if (shuffleSamples) {
             for (index = dataset.count; index > 1; --index) {
                 std::uniform_int_distribution<std::size_t> distribution(0, index - 1);
@@ -156,6 +172,7 @@ void NeuralNetwork::train(const MnistDataset& dataset,
 
         totalLoss = 0.0;
 
+        // Itère sur tous les échantillons du dataset.
         for (sampleIndex = 0; sampleIndex < dataset.count; ++sampleIndex) {
             dataIndex = shuffleSamples ? order[sampleIndex] : sampleIndex;
             input = dataset.images.column(dataIndex);
@@ -165,24 +182,28 @@ void NeuralNetwork::train(const MnistDataset& dataset,
 
             totalLoss += sampleLoss;
 
+            // Met à jour le graphe de perte avec sous-échantillonnage.
             if (trainingGraph != nullptr && trainingGraph->isOpen() && (plottedPointIndex % graphStride == 0)) {
                 trainingGraph->addSample(plottedPointIndex / graphStride, sampleLoss);
             }
             ++plottedPointIndex;
         }
 
+        // Affiche le suivi console de l'entraînement.
         double averageLoss = totalLoss / (double)dataset.count;
         std::cout << "Epoch " << (epoch + 1) << "/" << epochs
               << " - loss: " << averageLoss
                   << " - accuracy: " << evaluate(dataset) * 100.0 << "%\n";
     }
 
+    // Nettoyage manuel des allocations temporaires.
     if (trainingGraph != nullptr) {
         delete trainingGraph;
     }
     delete[] order;
 }
 
+// Évalue la précision du réseau sur un dataset donné.
 double NeuralNetwork::evaluate(const MnistDataset& dataset) const {
     if (dataset.count == 0) {
         return 0.0;
@@ -204,6 +225,7 @@ double NeuralNetwork::evaluate(const MnistDataset& dataset) const {
     return (double)correct / (double)dataset.count;
 }
 
+// Sauvegarde les paramètres du modèle au format binaire propriétaire.
 bool NeuralNetwork::saveWeights(const std::string& path) const {
     std::ofstream stream(path, std::ios::binary);
     if (!stream) {
@@ -215,6 +237,7 @@ bool NeuralNetwork::saveWeights(const std::string& path) const {
     magic[1] = 'R';
     magic[2] = 'N';
     magic[3] = '1';
+    // Écrit un en-tête magique pour vérifier l'intégrité au chargement.
     stream.write(magic, 4);
 
     std::uint64_t inputSize = inputSize_;
@@ -240,6 +263,7 @@ bool NeuralNetwork::saveWeights(const std::string& path) const {
     return false;
 }
 
+// Recharge les paramètres du modèle depuis un fichier binaire.
 bool NeuralNetwork::loadWeights(const std::string& path) {
     std::ifstream stream(path, std::ios::binary);
     if (!stream) {
@@ -281,6 +305,7 @@ bool NeuralNetwork::loadWeights(const std::string& path) {
 
 namespace {
 
+// Affiche l'aide de la ligne de commande.
 void printUsage() {
     std::cout << "NeuraNet usage:\n"
               << "  neuranet draw [weights.bin]\n"
@@ -288,6 +313,7 @@ void printUsage() {
               << "  neuranet test <mnist_dir> [weights.bin]\n";
 }
 
+// Concatène un chemin de dossier et un nom de fichier.
 std::string joinPath(const std::string& directory, const std::string& name) {
     if (directory.empty() || directory.back() == '/') {
         return directory + name;
@@ -295,18 +321,21 @@ std::string joinPath(const std::string& directory, const std::string& name) {
     return directory + "/" + name;
 }
 
+// Charge l'ensemble d'entraînement MNIST.
 MnistDataset loadTrainSet(const std::string& directory, std::size_t limit = 0) {
     return loadMnistDataset(joinPath(directory, "train-images.idx3-ubyte"),
                             joinPath(directory, "train-labels.idx1-ubyte"),
                             limit);
 }
 
+// Charge l'ensemble de test MNIST.
 MnistDataset loadTestSet(const std::string& directory, std::size_t limit = 0) {
     return loadMnistDataset(joinPath(directory, "t10k-images.idx3-ubyte"),
                             joinPath(directory, "t10k-labels.idx1-ubyte"),
                             limit);
 }
 
+// Lance l'interface de dessin avec des poids chargés ou aléatoires.
 void runDrawMode(const std::string& weightsPath) {
     NeuralNetwork network;
     if (!weightsPath.empty() && network.loadWeights(weightsPath)) {
@@ -321,7 +350,9 @@ void runDrawMode(const std::string& weightsPath) {
 
 } // namespace
 
+// Routeur principal des commandes CLI.
 int runApplication(int argc, char** argv) {
+    // Sans argument : démarre directement le mode dessin avec poids par défaut.
     if (argc <= 1) {
         runDrawMode("weights.bin");
         return 0;
@@ -335,6 +366,7 @@ int runApplication(int argc, char** argv) {
         return 0;
     }
 
+    // Mode entraînement sur dataset MNIST.
     if (command == "train") {
         if (argc < 3) {
             printUsage();
@@ -355,6 +387,7 @@ int runApplication(int argc, char** argv) {
         return 0;
     }
 
+    // Mode évaluation sur l'ensemble de test MNIST.
     if (command == "test") {
         if (argc < 3) {
             printUsage();

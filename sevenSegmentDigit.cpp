@@ -2,10 +2,13 @@
 
 #include <algorithm>
 
+// Initialise la zone de rendu du digit 7 segments.
 SevenSegmentDigit::SevenSegmentDigit(sf::Vector2f position, sf::Vector2f size)
     : topLeft_(position), size_(size) {}
 
+// Dessine un chiffre en activant/désactivant les 7 segments.
 void SevenSegmentDigit::draw(sf::RenderTarget& target, int digit, sf::Color onColor, sf::Color offColor) const {
+    // Table de vérité des segments pour les chiffres 0..9.
     bool segments[10][7];
     segments[0][0] = true;  segments[0][1] = true;  segments[0][2] = true;  segments[0][3] = true;  segments[0][4] = true;  segments[0][5] = true;  segments[0][6] = false;
     segments[1][0] = false; segments[1][1] = true;  segments[1][2] = true;  segments[1][3] = false; segments[1][4] = false; segments[1][5] = false; segments[1][6] = false;
@@ -18,9 +21,11 @@ void SevenSegmentDigit::draw(sf::RenderTarget& target, int digit, sf::Color onCo
     segments[8][0] = true;  segments[8][1] = true;  segments[8][2] = true;  segments[8][3] = true;  segments[8][4] = true;  segments[8][5] = true;  segments[8][6] = true;
     segments[9][0] = true;  segments[9][1] = true;  segments[9][2] = true;  segments[9][3] = true;  segments[9][4] = false; segments[9][5] = true;  segments[9][6] = true;
 
+    // Borne la valeur pour éviter tout accès hors tableau.
     if (digit < 0) digit = 0;
     if (digit > 9) digit = 9;
 
+    // Calcule la géométrie de chaque segment selon la taille souhaitée.
     float w = size_.x;
     float h = size_.y;
     float thickness = 4.f;
@@ -30,37 +35,44 @@ void SevenSegmentDigit::draw(sf::RenderTarget& target, int digit, sf::Color onCo
     float segmentWidth = w - 2.f * thickness;
     float segmentHeight = (h - 3.f * thickness) * 0.5f;
 
+    // Segment A (haut).
     sf::RectangleShape rect;
     rect.setFillColor(segments[digit][0] ? onColor : offColor);
     rect.setSize(sf::Vector2f(segmentWidth, thickness));
     rect.setPosition({topLeft_.x + thickness, topLeft_.y + 0.f});
     target.draw(rect);
 
+    // Segment B (haut-droite).
     rect.setFillColor(segments[digit][1] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
     rect.setPosition({topLeft_.x + w - thickness, topLeft_.y + thickness});
     target.draw(rect);
 
+    // Segment C (bas-droite).
     rect.setFillColor(segments[digit][2] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
     rect.setPosition({topLeft_.x + w - thickness, topLeft_.y + thickness + segmentHeight + thickness});
     target.draw(rect);
 
+    // Segment D (bas).
     rect.setFillColor(segments[digit][3] ? onColor : offColor);
     rect.setSize(sf::Vector2f(segmentWidth, thickness));
     rect.setPosition({topLeft_.x + thickness, topLeft_.y + h - thickness});
     target.draw(rect);
 
+    // Segment E (bas-gauche).
     rect.setFillColor(segments[digit][4] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
     rect.setPosition({topLeft_.x + 0.f, topLeft_.y + thickness + segmentHeight + thickness});
     target.draw(rect);
 
+    // Segment F (haut-gauche).
     rect.setFillColor(segments[digit][5] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
     rect.setPosition({topLeft_.x + 0.f, topLeft_.y + thickness});
     target.draw(rect);
 
+    // Segment G (milieu).
     rect.setFillColor(segments[digit][6] ? onColor : offColor);
     rect.setSize(sf::Vector2f(segmentWidth, thickness));
     rect.setPosition({topLeft_.x + thickness, topLeft_.y + thickness + segmentHeight});

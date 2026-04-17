@@ -9,14 +9,17 @@
 #include <random>
 #include <stdexcept>
 
+// Matrice dense minimaliste pour les opérations du réseau de neurones.
 class Matrix {
 public:
+    // Construit une matrice vide (0x0).
     Matrix() {
         rows_ = 0;
         cols_ = 0;
         data_ = nullptr;
     }
 
+    // Construit une matrice (rows x cols) initialisée avec une valeur constante.
     Matrix(std::size_t rows, std::size_t cols, double value = 0.0) {
         rows_ = rows;
         cols_ = cols;
@@ -28,6 +31,7 @@ public:
         fill(value);
     }
 
+    // Constructeur de copie (copie profonde du tampon).
     Matrix(const Matrix& other) {
         rows_ = other.rows_;
         cols_ = other.cols_;
@@ -41,6 +45,7 @@ public:
         }
     }
 
+    // Libère la mémoire du tampon interne.
     ~Matrix() {
         if (data_ != nullptr) {
             delete[] data_;
@@ -48,6 +53,7 @@ public:
         }
     }
 
+    // Opérateur d'affectation avec copie profonde.
     Matrix& operator=(const Matrix& other) {
         if (this == &other) {
             return *this;
@@ -71,29 +77,35 @@ public:
         return *this;
     }
 
+    // Accesseurs de dimensions.
     std::size_t rows() const { return rows_; }
     std::size_t cols() const { return cols_; }
     std::size_t size() const { return rows_ * cols_; }
 
+    // Accès en écriture à un élément (avec vérification par assert).
     double& operator()(std::size_t row, std::size_t col) {
         assert(row < rows_ && col < cols_);
         return data_[row * cols_ + col];
     }
 
+    // Accès en lecture à un élément (avec vérification par assert).
     const double& operator()(std::size_t row, std::size_t col) const {
         assert(row < rows_ && col < cols_);
         return data_[row * cols_ + col];
     }
 
+    // Accès brut au tampon interne (interopération / optimisation).
     double* raw() { return data_; }
     const double* raw() const { return data_; }
 
+    // Remplit tous les éléments avec la même valeur.
     void fill(double value) {
         for (std::size_t index = 0; index < size(); ++index) {
             data_[index] = value;
         }
     }
 
+    // Extrait une colonne de la matrice sous forme de vecteur colonne.
     Matrix column(std::size_t columnIndex) const {
         Matrix result(rows_, 1);
         std::size_t row;
@@ -103,6 +115,7 @@ public:
         return result;
     }
 
+    // Retourne la transposée de la matrice.
     Matrix transpose() const {
         Matrix result(cols_, rows_);
         std::size_t row;
@@ -115,10 +128,12 @@ public:
         return result;
     }
 
+    // Opérateurs arithmétiques (formes non mutables).
     Matrix operator+(const Matrix& other) const { return add(*this, other); }
     Matrix operator-(const Matrix& other) const { return subtract(*this, other); }
     Matrix operator*(double scalar) const { return scalarMultiply(*this, scalar); }
 
+    // Opérateurs arithmétiques en place.
     Matrix& operator+=(const Matrix& other) {
         std::size_t index;
         for (index = 0; index < size(); ++index) {
@@ -142,6 +157,7 @@ public:
         return *this;
     }
 
+    // Applique la fonction sigmoïde élément par élément.
     void applySigmoid() {
         for (std::size_t index = 0; index < size(); ++index) {
             double value = data_[index];
@@ -149,6 +165,7 @@ public:
         }
     }
 
+    // Renvoie la dérivée de la sigmoïde en supposant des activations déjà sigmoïdées.
     Matrix getSigmoidDerivative() const {
         Matrix result(rows_, cols_);
         for (std::size_t index = 0; index < size(); ++index) {
@@ -158,6 +175,7 @@ public:
         return result;
     }
 
+    // Renvoie l'indice du plus grand élément (argmax).
     std::size_t argMax() const {
         std::size_t bestIndex = 0;
         double bestValue = data_[0];
@@ -171,10 +189,12 @@ public:
         return bestIndex;
     }
 
+    // Fabrique une matrice nulle.
     static Matrix zeros(std::size_t rows, std::size_t cols) {
         return Matrix(rows, cols, 0.0);
     }
 
+    // Fabrique une matrice aléatoire uniforme dans [minValue, maxValue].
     static Matrix random(std::size_t rows, std::size_t cols, double minValue = -0.5, double maxValue = 0.5) {
         Matrix result(rows, cols);
         std::random_device randomDevice;
@@ -188,6 +208,7 @@ public:
         return result;
     }
 
+    // Construit un vecteur colonne à partir d'un tableau C.
     static Matrix fromArray(const double* values, std::size_t count) {
         Matrix result(count, 1);
         for (std::size_t index = 0; index < count; ++index) {
@@ -196,6 +217,7 @@ public:
         return result;
     }
 
+    // Addition matricielle élément par élément.
     static Matrix add(const Matrix& left, const Matrix& right) {
         Matrix result(left.rows_, left.cols_);
         std::size_t index;
@@ -205,6 +227,7 @@ public:
         return result;
     }
 
+    // Soustraction matricielle élément par élément.
     static Matrix subtract(const Matrix& left, const Matrix& right) {
         Matrix result(left.rows_, left.cols_);
         std::size_t index;
@@ -214,6 +237,7 @@ public:
         return result;
     }
 
+    // Produit de Hadamard (multiplication élément par élément).
     static Matrix hadamard(const Matrix& left, const Matrix& right) {
         Matrix result(left.rows_, left.cols_);
         std::size_t index;
@@ -223,6 +247,7 @@ public:
         return result;
     }
 
+    // Multiplication d'une matrice par un scalaire.
     static Matrix scalarMultiply(const Matrix& matrix, double scalar) {
         Matrix result(matrix.rows_, matrix.cols_);
         for (std::size_t index = 0; index < matrix.size(); ++index) {
@@ -231,6 +256,7 @@ public:
         return result;
     }
 
+    // Produit matriciel classique (left.rows x right.cols).
     static Matrix multiply(const Matrix& left, const Matrix& right) {
         Matrix result(left.rows_, right.cols_);
         std::size_t row;
@@ -250,6 +276,7 @@ public:
         return result;
     }
 
+    // Softmax colonne par colonne (utile pour les probabilités de sortie).
     static Matrix softmax(const Matrix& input) {
         Matrix result(input.rows_, input.cols_);
 
@@ -279,8 +306,11 @@ public:
     }
 
 private:
+    // Nombre de lignes.
     std::size_t rows_;
+    // Nombre de colonnes.
     std::size_t cols_;
+    // Tampon contigu stockant les valeurs ligne par ligne.
     double* data_;
 };
 

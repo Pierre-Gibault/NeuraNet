@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 
+// Initialise la fenêtre, le canevas et les structures de prédiction.
 DrawingApp::DrawingApp(NeuralNetwork& network)
     : network_(network),
             window_(
@@ -21,6 +22,7 @@ DrawingApp::DrawingApp(NeuralNetwork& network)
     clearCanvas();
 }
 
+// Boucle principale : gestion des événements, inférence puis rendu.
 void DrawingApp::run() {
     while (window_.isOpen()) {
         handleEvents();
@@ -32,6 +34,7 @@ void DrawingApp::run() {
     }
 }
 
+// Traite les interactions utilisateur (fermeture, dessin, effacement).
 void DrawingApp::handleEvents() {
 #if defined(SFML_VERSION_MAJOR) && SFML_VERSION_MAJOR >= 3
     while (const auto event = window_.pollEvent()) {
@@ -70,7 +73,9 @@ void DrawingApp::handleEvents() {
 #endif
 }
 
+// Dépose de l'encre sur le canevas avec un pinceau circulaire.
 void DrawingApp::paint(int x, int y) {
+    // Ignore les coordonnées en dehors de la zone de dessin.
     if (x < canvasLeft_ || y < canvasTop_) {
         return;
     }
@@ -93,6 +98,7 @@ void DrawingApp::paint(int x, int y) {
     std::size_t index;
     double val;
 
+    // Parcourt le voisinage du centre pour appliquer le pinceau.
     for (r = -brushRadius_; r <= brushRadius_; ++r) {
         for (c = -brushRadius_; c <= brushRadius_; ++c) {
             targetX = centerX + c;
@@ -107,6 +113,7 @@ void DrawingApp::paint(int x, int y) {
             }
 
             index = targetY * gridSize_ + targetX;
+            // Cumule l'intensité et borne à 1.0.
             val = canvas_(index, 0) + 0.35;
             if (val > 1.0) {
                 val = 1.0;
@@ -118,6 +125,7 @@ void DrawingApp::paint(int x, int y) {
     canvasDirty_ = true;
 }
 
+// Réinitialise entièrement le canevas et l'état de prédiction.
 void DrawingApp::clearCanvas() {
     canvas_.fill(0.0);
     predictedProbabilities_.fill(0.0);
@@ -126,6 +134,7 @@ void DrawingApp::clearCanvas() {
     canvasDirty_ = true;
 }
 
+// Construit un vecteur colonne 784x1 à partir de la grille 28x28.
 Matrix DrawingApp::buildInputVector() const {
     Matrix input(784, 1);
     for (int row = 0; row < gridSize_; ++row) {
@@ -138,6 +147,7 @@ Matrix DrawingApp::buildInputVector() const {
     return input;
 }
 
+// Lance l'inférence réseau sur le canevas courant.
 void DrawingApp::updatePrediction() {
     const Matrix input = buildInputVector();
     predictedProbabilities_ = network_.predict(input);
@@ -145,6 +155,7 @@ void DrawingApp::updatePrediction() {
     hasPrediction_ = true;
 }
 
+// Dessine une frame complète de l'interface.
 void DrawingApp::render() {
     window_.clear(sf::Color(30, 30, 35));
 
@@ -153,6 +164,7 @@ void DrawingApp::render() {
     window_.display();
 }
 
+// Affiche le panneau latéral des classes et probabilités.
 void DrawingApp::drawPredictionPanel() {
     sf::RectangleShape panel({280.f, 472.f});
     panel.setPosition({20.f, 24.f});
@@ -165,6 +177,7 @@ void DrawingApp::drawPredictionPanel() {
     const float rowHeight = 42.f;
     const float rowGap = 4.f;
 
+    // Une ligne par classe (0 à 9).
     for (int index = 0; index < 10; ++index) {
         const float rowY = baseY + index * (rowHeight + rowGap);
 
@@ -181,6 +194,7 @@ void DrawingApp::drawPredictionPanel() {
     }
 }
 
+// Dessine une valeur numérique sur 3 digits, suivie d'un symbole de pourcentage stylisé.
 void DrawingApp::drawPercentageValue(float x, float y, int percent, bool highlighted) {
     const int boundedPercent = std::clamp(percent, 0, 100);
     const int hundreds = boundedPercent / 100;
@@ -198,6 +212,7 @@ void DrawingApp::drawPercentageValue(float x, float y, int percent, bool highlig
     digitTens.draw(window_, tens, activeColor, inactiveColor);
     digitUnits.draw(window_, units, activeColor, inactiveColor);
 
+    // Dessine un caractère '%' simplifié.
     sf::RectangleShape slash1({4.f, 12.f});
     slash1.setPosition({x + 78.f, y + 2.f});
     slash1.setFillColor(activeColor);
@@ -209,6 +224,7 @@ void DrawingApp::drawPercentageValue(float x, float y, int percent, bool highlig
     window_.draw(slash2);
 }
 
+// Dessine le cadre et les pixels du canevas en niveaux de gris.
 void DrawingApp::drawCanvas() {
     sf::RectangleShape frame({static_cast<float>(gridSize_ * cellSize_ + 8), static_cast<float>(gridSize_ * cellSize_ + 8)});
     frame.setPosition({static_cast<float>(canvasLeft_ - 4), static_cast<float>(canvasTop_ - 4)});
@@ -217,6 +233,7 @@ void DrawingApp::drawCanvas() {
     frame.setOutlineColor(sf::Color(180, 180, 180));
     window_.draw(frame);
 
+    // Convertit chaque cellule en pixel affiché.
     for (int row = 0; row < gridSize_; ++row) {
         for (int col = 0; col < gridSize_; ++col) {
             const std::size_t index = static_cast<std::size_t>(row) * gridSize_ + static_cast<std::size_t>(col);

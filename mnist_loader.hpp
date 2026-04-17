@@ -9,14 +9,21 @@
 #include <stdexcept>
 #include <string>
 
+// Jeu de données MNIST chargé en mémoire.
 struct MnistDataset {
+    // Matrice d'images normalisées (pixels x échantillons).
     Matrix images;
+    // Tableau d'étiquettes (0..9), une étiquette par échantillon.
     std::uint8_t* labels;
+    // Nombre d'échantillons effectivement chargés.
     std::size_t count;
+    // Hauteur d'une image en pixels.
     std::size_t rows;
+    // Largeur d'une image en pixels.
     std::size_t cols;
 };
 
+// Lit un entier 32 bits en big-endian depuis le flux binaire.
 inline std::uint32_t readBigEndianUInt32(std::ifstream& stream) {
     unsigned char byte0, byte1, byte2, byte3;
     stream.read((char*)&byte0, 1);
@@ -33,6 +40,7 @@ inline std::uint32_t readBigEndianUInt32(std::ifstream& stream) {
     return result;
 }
 
+// Charge les fichiers image/label MNIST et normalise les pixels dans [0, 1].
 inline MnistDataset loadMnistDataset(const std::string& imagePath,
                                      const std::string& labelPath,
                                      std::size_t sampleLimit = 0) {
@@ -54,6 +62,7 @@ inline MnistDataset loadMnistDataset(const std::string& imagePath,
     const std::uint32_t labelMagic = readBigEndianUInt32(labelStream);
     const std::uint32_t labelCount = readBigEndianUInt32(labelStream);
 
+    // Vérifie la validité des en-têtes MNIST.
     if (imageMagic != 2051) {
         throw std::runtime_error("Invalid MNIST image file magic number");
     }
@@ -71,6 +80,7 @@ inline MnistDataset loadMnistDataset(const std::string& imagePath,
     dataset.rows = imageRows;
     dataset.cols = imageCols;
 
+    // Limite optionnellement le nombre d'échantillons lus.
     if (sampleLimit > 0 && sampleLimit < dataset.count) {
         dataset.count = sampleLimit;
     }
@@ -82,6 +92,7 @@ inline MnistDataset loadMnistDataset(const std::string& imagePath,
     unsigned char labelValue;
     double pixelDouble;
 
+    // Lit chaque image + son label associé.
     for (sample = 0; sample < dataset.count; ++sample) {
         for (pixel = 0; pixel < imageSize; ++pixel) {
             value = 0;
@@ -90,6 +101,7 @@ inline MnistDataset loadMnistDataset(const std::string& imagePath,
                 throw std::runtime_error("Unexpected end of MNIST image file");
             }
 
+            // Normalisation du pixel brut [0, 255] -> [0, 1].
             pixelDouble = value / 255.0;
             dataset.images(pixel, sample) = pixelDouble;
         }
