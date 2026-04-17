@@ -66,9 +66,15 @@ Puis on applique une fonction d’activation sigmoïde :
 
 $$a_1 = \sigma(z_1)$$
 
+**Utilité :** La sigmoïde aplati les valeurs en sortie de la couche cachée dans l'intervalle $[0, 1]$. Cela introduit de la non-linéarité dans le réseau, permettant d'apprendre des relations complexes entre les entrées et les sorties. Sans fonction d'activation, le réseau serait juste une combinaison linéaire et ne pourrait pas résoudre des problèmes non-linéaires.
+
 La fonction sigmoïde est définie par :
 
 $$\sigma(u) = \frac{1}{1 + e^{-u}}$$
+
+Elle transforme les valeurs de $z_1$ pour obtenir :
+
+$$a_1 = \sigma(z_1)$$
 
 ### 2) Couche de sortie
 
@@ -81,6 +87,8 @@ Puis on applique le softmax pour obtenir une distribution de probabilité :
 $$\hat{y} = \mathrm{softmax}(z_2)$$
 
 ### Softmax
+
+**Utilité :** Le softmax convertit les valeurs de sortie du réseau en une distribution de probabilité. Cela permet d'interpréter chaque composante comme la confiance du réseau pour chaque classe de 0 à 9. Les scores élevés sont amplifiés tandis que les scores faibles sont atténués, rendant la prédiction plus discriminante.
 
 Pour un vecteur $z$ de taille 10, le softmax donne :
 
@@ -109,6 +117,12 @@ Intuition : plus la probabilité donnée à la bonne classe est grande, plus la 
 La rétropropagation calcule les gradients de la perte par rapport aux poids et aux biais.
 
 On utilise la combinaison classique **softmax + entropie croisée**, dont le gradient de sortie simplifie fortement.
+
+### Qu'est-ce qu'un gradient ?
+
+Un gradient est une mesure de la façon dont une fonction change lorsque ses entrées changent. Dans le contexte de l'apprentissage automatique, il nous indique dans quelle direction nous devons ajuster nos poids pour réduire l'erreur de prédiction. En d'autres termes, il nous aide à savoir comment améliorer notre modèle.
+
+Lorsque nous calculons le gradient, nous cherchons à comprendre comment une petite modification des poids ou des biais affecte la perte. Si le gradient est positif, cela signifie que nous devons diminuer le poids pour réduire la perte. Si le gradient est négatif, nous devons l'augmenter. En suivant ces gradients, nous pouvons ajuster nos paramètres pour améliorer les performances de notre modèle.
 
 ### Gradient à la sortie
 
@@ -172,8 +186,6 @@ Ainsi chaque entrée du réseau est dans l’intervalle :
 
 $$[0, 1]$$
 
-Dans l’interface SFML, la zone de dessin `280 × 280` est rééchantillonnée vers `28 × 28` en moyennant les blocs correspondants.
-
 ## Dimensions utilisées
 
 Pour éviter les erreurs de forme, voici les dimensions utilisées :
@@ -234,45 +246,34 @@ Lancer :
 
 ### Sur Windows
 
-#### Prérequis
+#### Étape 1 : installer les outils
 
-1. Installer **MinGW-w64** (compilateur g++)
-   - Télécharger depuis [mingw-w64.org](https://www.mingw-w64.org/)
-   - Ajouter le dossier `bin` à la variable `PATH`
+Installez **MinGW-w64** et ajoutez le dossier `bin` à votre variable `PATH`.
 
-2. Installer **SFML 2.6**
-   - Télécharger les binaires MinGW depuis [sfml-dev.org](https://www.sfml-dev.org/download/sfml/2.6.0/)
-   - Décompresser dans un dossier (ex: `C:\SFML`)
+#### Étape 2 : garder le dossier `SFML/` du projet
 
-#### Compiler
+Le projet contient déjà les DLL SFML dans le dossier `SFML/`. Gardez ce dossier à côté de `neuranet.exe`.
 
-Remplacer `C:\SFML` par votre chemin d'installation SFML :
+#### Étape 3 : compiler
 
 ```bash
-g++ -std=c++17 -O2 -Wall -Wextra main.cpp neuralNetwork.cpp drawingApp.cpp trainingGraphWindow.cpp sevenSegmentDigit.cpp -o neuranet.exe -IC:\SFML\include -LC:\SFML\lib -lsfml-graphics -lsfml-window -lsfml-system
+g++ -std=c++17 -O2 -Wall -Wextra main.cpp neuralNetwork.cpp drawingApp.cpp trainingGraphWindow.cpp sevenSegmentDigit.cpp -o neuranet.exe -I.\SFML\include -L.\SFML\lib -lsfml-graphics -lsfml-window -lsfml-system
 ```
 
-#### Lancer sous Windows
+#### Étape 4 : lancer
 
-Copier les fichiers DLL dans le même dossier que `neuranet.exe` :
-
-```bash
-copy C:\SFML\bin\sfml-graphics-2.dll .
-copy C:\SFML\bin\sfml-window-2.dll .
-copy C:\SFML\bin\sfml-system-2.dll .
-```
-
-Puis lancer l'application :
+Ajoutez le dossier `SFML/` du projet au `PATH`, puis lancez l'exécutable :
 
 ```bash
+set PATH=%CD%\SFML;%PATH%
 neuranet.exe draw weights.bin
 ```
 
-Ou double-cliquer sur `neuranet.exe`.
+Vous pouvez aussi double-cliquer sur `neuranet.exe` si le `PATH` est déjà configuré.
 
 ## Données MNIST attendues
 
-Place les fichiers IDX bruts dans le dossier `data/mnist/` :
+Les fichiers IDX bruts avec les images sont dans le dossier `data/mnist/` :
 
 - `train-images.idx3-ubyte`
 - `train-labels.idx1-ubyte`
