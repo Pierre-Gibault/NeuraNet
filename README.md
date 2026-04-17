@@ -224,12 +224,14 @@ Cela permet de :
 
 ## Compilation
 
+Pour Windows, il doit être compilé dans MSYS2 UCRT64 avec SFML installé via `pacman`.
+
 ### Sur Linux
 
 Installer les dépendances (Ubuntu/Debian) :
 
 ```bash
-sudo apt-get install libsfml-dev g++
+sudo apt-get install g++ libsfml-dev
 ```
 
 Compiler :
@@ -246,30 +248,44 @@ Lancer :
 
 ### Sur Windows
 
-#### Étape 1 : installer les outils
+#### Étape 1 : ouvrir MSYS2 UCRT64
 
-Installez **MinGW-w64** et ajoutez le dossier `bin` à votre variable `PATH`.
+Utilisez le shell UCRT64 de MSYS2, pas le shell MinGW64 classique.
 
-#### Étape 2 : garder le dossier `SFML/` du projet
+#### Étape 2 : installer les outils
 
-Le projet contient déjà les DLL SFML dans le dossier `SFML/`. Gardez ce dossier à côté de `neuranet.exe`.
+```bash
+pacman -S --needed mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-sfml pkg-config
+```
+
+- appuyer sur entree
+- entree 'y'
 
 #### Étape 3 : compiler
 
+##### Deplacer vous dans le dossier du projet
+
+par exemple:
+
 ```bash
-g++ -std=c++17 -O2 -Wall -Wextra main.cpp neuralNetwork.cpp drawingApp.cpp trainingGraphWindow.cpp sevenSegmentDigit.cpp -o neuranet.exe -I.\SFML\include -L.\SFML\lib -lsfml-graphics -lsfml-window -lsfml-system
+cd /c/NeuraNet
+```
+
+##### Lancer :
+
+```bash
+g++ -std=c++17 -O2 -Wall -Wextra main.cpp neuralNetwork.cpp drawingApp.cpp trainingGraphWindow.cpp sevenSegmentDigit.cpp -o neuranet.exe $(pkg-config --cflags --libs sfml-graphics sfml-window sfml-system)
 ```
 
 #### Étape 4 : lancer
 
-Ajoutez le dossier `SFML/` du projet au `PATH`, puis lancez l'exécutable :
-
 ```bash
-set PATH=%CD%\SFML;%PATH%
-neuranet.exe draw weights.bin
+./neuranet.exe train data/mnist 3 0.01 weights.bin
 ```
 
-Vous pouvez aussi double-cliquer sur `neuranet.exe` si le `PATH` est déjà configuré.
+### Notes
+
+- Le même code source est compilé sur Linux et sur UCRT64 avec les mêmes fichiers.
 
 ## Données MNIST attendues
 
@@ -293,7 +309,7 @@ Linux :
 Windows (dans PowerShell ou CMD) :
 
 ```bash
-neuranet.exe train data/mnist 3 0.01 weights.bin
+./neuranet.exe train data/mnist 3 0.01 weights.bin
 ```
 
 ### Ouvrir l'interface de dessin
@@ -307,7 +323,7 @@ Linux :
 Windows :
 
 ```bash
-neuranet.exe draw weights.bin
+./neuranet.exe draw weights.bin
 ```
 
 ### Tester le modèle
@@ -321,14 +337,14 @@ Linux :
 Windows :
 
 ```bash
-neuranet.exe test data/mnist weights.bin
+./neuranet.exe test data/mnist weights.bin
 ```
 
 Dans la fenêtre SFML :
 
 - maintiens le bouton gauche pour dessiner
 - appuie sur `C` pour effacer le canevas
-- le canevas de dessin est une grille `28 x 28` (pixels agrandis pour le confort)
+- le canevas de dessin est une grille `28 x 28`
 - à gauche, les pourcentages de prédiction sont affichés pour les 10 classes (`0` à `9`)
 
 Pendant `train`, une fenêtre de suivi s’ouvre automatiquement pour visualiser l’évolution de la `loss` avec un échantillonnage d’un point sur 100 `forward propagation`.

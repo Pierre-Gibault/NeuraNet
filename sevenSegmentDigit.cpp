@@ -33,36 +33,36 @@ void SevenSegmentDigit::draw(sf::RenderTarget& target, int digit, sf::Color onCo
     sf::RectangleShape rect;
     rect.setFillColor(segments[digit][0] ? onColor : offColor);
     rect.setSize(sf::Vector2f(segmentWidth, thickness));
-    rect.setPosition(topLeft_.x + thickness, topLeft_.y + 0.f);
+    rect.setPosition({topLeft_.x + thickness, topLeft_.y + 0.f});
     target.draw(rect);
 
     rect.setFillColor(segments[digit][1] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
-    rect.setPosition(topLeft_.x + w - thickness, topLeft_.y + thickness);
+    rect.setPosition({topLeft_.x + w - thickness, topLeft_.y + thickness});
     target.draw(rect);
 
     rect.setFillColor(segments[digit][2] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
-    rect.setPosition(topLeft_.x + w - thickness, topLeft_.y + thickness + segmentHeight + thickness);
+    rect.setPosition({topLeft_.x + w - thickness, topLeft_.y + thickness + segmentHeight + thickness});
     target.draw(rect);
 
     rect.setFillColor(segments[digit][3] ? onColor : offColor);
     rect.setSize(sf::Vector2f(segmentWidth, thickness));
-    rect.setPosition(topLeft_.x + thickness, topLeft_.y + h - thickness);
+    rect.setPosition({topLeft_.x + thickness, topLeft_.y + h - thickness});
     target.draw(rect);
 
     rect.setFillColor(segments[digit][4] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
-    rect.setPosition(topLeft_.x + 0.f, topLeft_.y + thickness + segmentHeight + thickness);
+    rect.setPosition({topLeft_.x + 0.f, topLeft_.y + thickness + segmentHeight + thickness});
     target.draw(rect);
 
     rect.setFillColor(segments[digit][5] ? onColor : offColor);
     rect.setSize(sf::Vector2f(thickness, segmentHeight));
-    rect.setPosition(topLeft_.x + 0.f, topLeft_.y + thickness);
+    rect.setPosition({topLeft_.x + 0.f, topLeft_.y + thickness});
     target.draw(rect);
 
     rect.setFillColor(segments[digit][6] ? onColor : offColor);
     rect.setSize(sf::Vector2f(segmentWidth, thickness));
-    rect.setPosition(topLeft_.x + thickness, topLeft_.y + thickness + segmentHeight);
+    rect.setPosition({topLeft_.x + thickness, topLeft_.y + thickness + segmentHeight});
     target.draw(rect);
 }

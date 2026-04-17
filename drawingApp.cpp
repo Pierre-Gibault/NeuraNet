@@ -4,10 +4,17 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 DrawingApp::DrawingApp(NeuralNetwork& network)
     : network_(network),
-      window_(sf::VideoMode(900, 520), "NeuraNet - MNIST drawing"),
+            window_(
+#if defined(SFML_VERSION_MAJOR) && SFML_VERSION_MAJOR >= 3
+                    sf::VideoMode({900u, 520u}),
+#else
+                    sf::VideoMode(900, 520),
+#endif
+                    "NeuraNet - MNIST drawing"),
       canvas_(gridSize_ * gridSize_, 1),
       predictedProbabilities_(10, 1) {
     window_.setFramerateLimit(60);
@@ -26,6 +33,25 @@ void DrawingApp::run() {
 }
 
 void DrawingApp::handleEvents() {
+#if defined(SFML_VERSION_MAJOR) && SFML_VERSION_MAJOR >= 3
+    while (const auto event = window_.pollEvent()) {
+        if (event->is<sf::Event::Closed>()) {
+            window_.close();
+        } else if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+            if (keyPressed->code == sf::Keyboard::Key::C) {
+                clearCanvas();
+            }
+        } else if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>()) {
+            if (mousePressed->button == sf::Mouse::Button::Left) {
+                paint(mousePressed->position.x, mousePressed->position.y);
+            }
+        } else if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>()) {
+            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                paint(mouseMoved->position.x, mouseMoved->position.y);
+            }
+        }
+    }
+#else
     sf::Event event;
     while (window_.pollEvent(event)) {
         if (event.type == sf::Event::Closed) {
@@ -41,6 +67,7 @@ void DrawingApp::handleEvents() {
             }
         }
     }
+#endif
 }
 
 void DrawingApp::paint(int x, int y) {
@@ -128,7 +155,7 @@ void DrawingApp::render() {
 
 void DrawingApp::drawPredictionPanel() {
     sf::RectangleShape panel({280.f, 472.f});
-    panel.setPosition(20.f, 24.f);
+    panel.setPosition({20.f, 24.f});
     panel.setFillColor(sf::Color(44, 44, 50));
     panel.setOutlineThickness(2.f);
     panel.setOutlineColor(sf::Color(120, 120, 130));
@@ -142,7 +169,7 @@ void DrawingApp::drawPredictionPanel() {
         const float rowY = baseY + index * (rowHeight + rowGap);
 
         sf::RectangleShape rowBackground({248.f, rowHeight});
-        rowBackground.setPosition(36.f, rowY);
+        rowBackground.setPosition({36.f, rowY});
         rowBackground.setFillColor(index == predictedDigit_ ? sf::Color(64, 82, 105) : sf::Color(55, 55, 60));
         window_.draw(rowBackground);
 
@@ -172,19 +199,19 @@ void DrawingApp::drawPercentageValue(float x, float y, int percent, bool highlig
     digitUnits.draw(window_, units, activeColor, inactiveColor);
 
     sf::RectangleShape slash1({4.f, 12.f});
-    slash1.setPosition(x + 78.f, y + 2.f);
+    slash1.setPosition({x + 78.f, y + 2.f});
     slash1.setFillColor(activeColor);
     window_.draw(slash1);
 
     sf::RectangleShape slash2({4.f, 12.f});
-    slash2.setPosition(x + 88.f, y + 14.f);
+    slash2.setPosition({x + 88.f, y + 14.f});
     slash2.setFillColor(activeColor);
     window_.draw(slash2);
 }
 
 void DrawingApp::drawCanvas() {
     sf::RectangleShape frame({static_cast<float>(gridSize_ * cellSize_ + 8), static_cast<float>(gridSize_ * cellSize_ + 8)});
-    frame.setPosition(static_cast<float>(canvasLeft_ - 4), static_cast<float>(canvasTop_ - 4));
+    frame.setPosition({static_cast<float>(canvasLeft_ - 4), static_cast<float>(canvasTop_ - 4)});
     frame.setFillColor(sf::Color::Transparent);
     frame.setOutlineThickness(2.f);
     frame.setOutlineColor(sf::Color(180, 180, 180));
@@ -193,10 +220,10 @@ void DrawingApp::drawCanvas() {
     for (int row = 0; row < gridSize_; ++row) {
         for (int col = 0; col < gridSize_; ++col) {
             const std::size_t index = static_cast<std::size_t>(row) * gridSize_ + static_cast<std::size_t>(col);
-            const sf::Uint8 value = static_cast<sf::Uint8>(std::clamp(canvas_(index, 0), 0.0, 1.0) * 255.0);
+            const std::uint8_t value = static_cast<std::uint8_t>(std::clamp(canvas_(index, 0), 0.0, 1.0) * 255.0);
 
             sf::RectangleShape pixel({static_cast<float>(cellSize_ - 1), static_cast<float>(cellSize_ - 1)});
-            pixel.setPosition(static_cast<float>(canvasLeft_ + col * cellSize_), static_cast<float>(canvasTop_ + row * cellSize_));
+            pixel.setPosition({static_cast<float>(canvasLeft_ + col * cellSize_), static_cast<float>(canvasTop_ + row * cellSize_)});
             pixel.setFillColor(sf::Color(value, value, value));
             window_.draw(pixel);
         }
